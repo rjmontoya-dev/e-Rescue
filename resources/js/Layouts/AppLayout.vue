@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router,usePage } from '@inertiajs/vue3';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Banner from '@/Components/Banner.vue';
 import Dropdown from '@/Components/Dropdown.vue';
@@ -30,9 +30,7 @@ const logout = () => {
 <template>
     <div>
         <Head :title="title" />
-
         <Banner />
-
         <div class="min-h-screen bg-gray-100">
             <nav class="bg-white border-b border-gray-100">
                 <!-- Primary Navigation Menu -->
@@ -41,7 +39,7 @@ const logout = () => {
                         <div class="flex">
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link :href="route('dashboard')">
+                                <Link   :href="route('dashboard')">
                                     <ApplicationMark class="block h-9 w-auto" />
                                 </Link>
                             </div>
@@ -51,6 +49,16 @@ const logout = () => {
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
+                                 <NavLink  v-if="usePage().props.auth.user.role == 'Guest'" :href="route('floods.index')" :active="route().current('floods.*')">
+                                    Floods Information
+                                </NavLink>
+                                <NavLink v-if="usePage().props.auth.user.role == 'Super Admin'" :href="route('admin.settings.index')"  :active="route().current('admin.settings.index')" >
+                                    SMS Settings
+                                </NavLink>
+                                <NavLink v-if="usePage().props.auth.user.role == 'Super Admin'" :href="route('admin.users.index')" :active="route().current('admin.users.index')"  >
+                                    Users
+                                </NavLink>
+
                             </div>
                         </div>
 
@@ -194,6 +202,15 @@ const logout = () => {
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('floods.index')" :active="route().current('floods.index')">
+                            Flood Information
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink v-if="usePage().props.auth.user.id == 1" :href="route('admin.settings.index')" >
+                            SMS Settings
+                        </ResponsiveNavLink>
+                         <ResponsiveNavLink v-if="usePage().props.auth.user.id == 1" :href="route('admin.users.index')" >
+                            Users
+                        </ResponsiveNavLink>
                     </div>
 
                     <!-- Responsive Settings Options -->
@@ -274,7 +291,7 @@ const logout = () => {
             </nav>
 
             <!-- Page Heading -->
-            <header v-if="$slots.header" class="bg-white shadow">
+            <header v-if=" usePage().props.auth.user.id == 1 && $slots.header" class="bg-white shadow">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>
