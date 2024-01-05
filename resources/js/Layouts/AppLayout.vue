@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref,onMounted,computed,onBeforeUnmount } from 'vue';
 import { Head, Link, router,usePage } from '@inertiajs/vue3';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Banner from '@/Components/Banner.vue';
@@ -7,7 +7,10 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-
+import Modal from "@/Components/Modal.vue";
+import { ref as dbRef, onChildAdded,onChildChanged } from 'firebase/database';
+import db from '@/firebase';
+import {ElMessage} from 'element-plus'
 defineProps({
     title: String,
 });
@@ -25,10 +28,137 @@ const switchToTeam = (team) => {
 const logout = () => {
     router.post(route('logout'));
 };
+
+const _showModal = ref(false);
+const message_type = ref([]);
+const message = ref("");
+const parameters = {
+    apikey: '89e67f06b0ec13b1c7769e65fa923450',
+    number: [],
+    message: message,
+}
+
+const closeModal = ()=>{
+    _showModal.value = false;
+    window.speechSynthesis.cancel();
+}
+const getFireData = () =>{
+    const stationDataRef = dbRef(db, 'status-level');
+    const currentRoute = window.location.pathname;
+    onChildChanged(stationDataRef, (snapshot) => {
+        const status = snapshot.val(); // This assumes 'status' is directly under 'water-level'
+        console.log(status);
+        if(status === "1"){
+            message.value = message_type.value[0].body;
+        }
+        if(status === "2"){
+            message.value = message_type.value[1].body;
+            speak(message_type.value[1].body);
+            axios.get('/api/email-notif',{params: {message: message.value}})
+            .then((res)=>{console.log(res);
+              ElMessage({
+                        title: 'Success',
+                        message: 'Email Successfully Sent.',
+                        type: 'success',
+                    })
+                })
+            .catch((err)=>{console.log(err);
+                 ElMessage({
+                        title: 'Error',
+                        message: 'Oops, something went wrong',
+                        type: 'error',
+                    })
+            });
+            return;
+        }
+        if(status === "3"){
+            message.value = message_type.value[2].body;
+              console.log(message.value);
+            speak(message_type.value[2].body);
+            axios.get('/api/email-notif',{params: {message: message.value}})
+            .then((res)=>{console.log(res);
+                 ElMessage({
+                        title: 'Success',
+                        message: 'Email Successfully Sent.',
+                        type: 'success',
+                    })
+            })
+            .catch((err)=>{console.log(err);
+                  ElMessage({
+                        title: 'Error',
+                        message: 'Oops, something went wrong',
+                        type: 'error',
+                    })
+            });
+            return;
+        }
+    });
+}
+const speak = (message) => {
+    console.log(message)
+    const speech = new SpeechSynthesisUtterance();
+    _showModal.value = true;
+    speech.text = message;
+    window.speechSynthesis.speak(speech);
+};
+const sendSMS =()=>{
+    console.log(parameters.message.value);
+      ElMessage({
+            title: 'Success',
+            message: 'Message has successfully send.',
+            type: 'success',
+        })
+    // axios.post('https://api.semaphore.co/api/v4/messages', new URLSearchParams(parameters), {
+    //     headers: {
+    //         'Content-Type': 'application/x-www-form-urlencoded'
+    //     }
+    // })
+    // .then(response => {
+    //     console.log(response.data);
+    // })
+    // .catch(error => {
+    //     console.error(error);
+    // });
+    console.log('click');
+}
+onMounted(() => {
+
+    getFireData();
+    axios.get('/message_info')
+    .then((res)=>{
+        const contacts = res.data.contacts;
+        parameters.number.push(...contacts.map(contact => '0'+contact.phone_number));
+        message_type.value = res.data.messagecontent;
+
+    })
+    .catch((error) => {console.log(error)})
+});
+
+onBeforeUnmount(() => {
+  window.speechSynthesis.cancel(); // Stop speech synthesis when the component is about to be destroyed
+});
 </script>
 
 <template>
+    <Modal :show="_showModal"  :closeable="true">
+            <button type="button" class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="popup-modal">
+                <svg @click="closeModal()" class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+                <span class="sr-only">Close modal</span>
+            </button>
+            <div class="p-4 md:p-5 text-center">
+                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                </svg>
+                <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">{{ message }}</h3>
+                <button @click="closeModal()" type="button" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center me-2">
+                    OK
+                </button>
+            </div>
+    </Modal>
     <div>
+        <button class="bg-green-100 px-10 py-10" @click="sendSMS()">send message</button>
         <Head :title="title" />
         <Banner />
         <div class="min-h-screen bg-gray-100">

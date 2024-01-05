@@ -11,7 +11,7 @@ class SMScontroller extends Controller
     public function update(Request $request,$id){
 
         $message_content = $request->validate([
-            'body' => 'required|max:225',
+            'body' => 'required',
         ]);
         $find = Message_Content::findOrFail($id);
 

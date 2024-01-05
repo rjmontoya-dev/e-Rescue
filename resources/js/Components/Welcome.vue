@@ -2,6 +2,8 @@
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import {computed, onMounted,ref} from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import { ref as dbRef, onChildAdded } from 'firebase/database';
+import db from '@/firebase';
 
 const weather_data =  ref([]);
 const weather_dataReady = ref(false);
@@ -45,51 +47,10 @@ const getCurrentPositionAsync = () => {
     );
   });
 };
-    const chartOptions =  {
-        chart: {
-            id: 'vuechart-example',
 
-        },
-        title: {
-            text: 'Water Level Chart Monitoring',
-            align: 'left'
-        },
-        dataLabels: {
-              enabled: true,
-            },
-        stroke: {
-              curve: 'smooth'
-            },
-       colors: ['#38bdf8'],
-        fill: {
-            type: 'gradient',
-            gradient: {
-                shadeIntensity: 1,
-                inverseColors: false,
-                opacityFrom: 0.5,
-                opacityTo: 0,
-                stops: [0, 90, 100],
-            },
-        },
-        xaxis:  {
-            title: {
-                text: 'Time',
-            },
-            type:'date',
-            categories:[],
-        } ,
-        yaxis: {
-            title: {
-                text: 'Water Level',
-            },
-        },
-    };
-    const series  = [
-        {
-            name: 'Level',
-            data: ['2','3','5','10','20','1','5']
-        }
-    ];
+
+
+
 onMounted(async () => {
   try {
     const positionData = await getCurrentPositionAsync();
@@ -111,12 +72,85 @@ onMounted(async () => {
             {name:'sea_level',data:positionData.main.sea_level},
         ];
     weather_dataReady.value = true;
+
   } catch (error) {
     console.error(error);
   }
 });
 
 
+</script>
+<script>
+    export default {
+        data(){
+            return {
+
+                chartOptions: {
+                    chart: {
+                        id: 'vuechart-example',
+
+                    },
+                    title: {
+                        text: 'Water Level Chart Monitoring',
+                        align: 'left'
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        },
+                    stroke: {
+                        curve: 'smooth'
+                        },
+                    colors: ['#38bdf8'],
+                    fill: {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            inverseColors: false,
+                            opacityFrom: 0.5,
+                            opacityTo: 0,
+                            stops: [0, 90, 100],
+                        },
+                    },
+                    xaxis:  {
+                        title: {
+                            text: 'Time',
+                        },
+                        type:'date',
+                        categories:[],
+                    } ,
+                    yaxis: {
+                        title: {
+                            text: 'Water Level',
+                        },
+                    },
+                },
+                series : [
+                    {
+                        name: 'Level',
+                        data: ref([])
+                    }
+                ]
+            }
+        },
+        methods:{
+            getWaterLevel ()  {
+                const stationDataRef = dbRef(db, 'water-level/readings/');
+                const snapshotValue = ref([]);
+                const reading = ref([]);
+                onChildAdded(stationDataRef, (snapshot) => {
+                    snapshotValue.value = snapshot.val();
+                    reading.value.push(snapshotValue.value['val']);
+                    this.updateChart(reading.value.slice());
+                });
+            },
+            updateChart(data){
+                this.series[0].data = [...data];
+            },
+        },
+        mounted(){
+              this.getWaterLevel();
+        }
+    }
 </script>
 
 <template>
@@ -177,25 +211,28 @@ onMounted(async () => {
     </div>
     <div class="mt-4 max-w-7xl mx-auto sm:px-6 lg:px-8 ">
         <div class="bg-white overflow-hidden shadow-xl  ">
-            <div class="bg-white border-l-8  border-green-600 ">
-                <p>
-                    <br>
-                    <br>
-                </p>
+            <div class="bg-white ">
+                <div class="bg-teal-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md" role="alert">
+                    <div class="flex">
+                        <div class="py-1"><svg class="fill-current h-6 w-6 text-teal-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
+                            <div>
+                                <p class="font-bold">Our privacy policy has changed</p>
+                                <p class="text-sm">{{ this.series[0].data[this.series[0].data.length -1] }}</p>
+                            </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <div class="mt-4 max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg ">
-            <div class="bg-white border-b-4  border-green-600 ">
+            <div class="bg-white  ">
                <div id="chart" class="px-8 py-10">
                     <VueApexCharts type="area"   height="350" :options="chartOptions" :series="series"></VueApexCharts>
                 </div>
             </div>
         </div>
     </div>
-
-
 </template>
 <style scoped>
 

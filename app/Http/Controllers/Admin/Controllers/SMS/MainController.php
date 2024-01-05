@@ -14,4 +14,9 @@ class MainController extends Controller
         $messagecontent = Message_Content::all();
         return inertia('Admin/SMSSettings/Index',['contacts'=>$contacts,'messagecontent'=>$messagecontent]);
     }
+    public function message_info(){
+        $contacts = ContactInformation::all();
+        $messagecontent = Message_Content::all();
+        return response()->json(['contacts'=>$contacts,'messagecontent'=>$messagecontent]);
+    }
 }

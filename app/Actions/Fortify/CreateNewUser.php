@@ -32,7 +32,7 @@ class CreateNewUser implements CreatesNewUsers
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
         ]);
-        SendMailService::newAccountMail($user);
+        // SendMailService::newAccountMail($user);
 
         $user->assignRole('Guest');
 

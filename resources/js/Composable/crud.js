@@ -7,11 +7,7 @@ export function useCrud(id){
                 form.patch(route(submit_link,form.id)),{
                 onSuccess: () => {
                      form.reset()
-                    ElMessage({
-                        title: 'Success',
-                        message: 'Record successfully updated',
-                        type: 'success',
-                    })
+                   cc
                 },
                 onError:() =>{
                     ElMessage({
