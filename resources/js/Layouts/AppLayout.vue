@@ -158,7 +158,7 @@ onBeforeUnmount(() => {
             </div>
     </Modal>
     <div>
-        <button class="bg-green-100 px-10 py-10" @click="sendSMS()">send message</button>
+        <!-- <button class="bg-green-100 px-10 py-10" @click="sendSMS()">send message</button> -->
         <Head :title="title" />
         <Banner />
         <div class="min-h-screen bg-gray-100">
@@ -170,7 +170,7 @@ onBeforeUnmount(() => {
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
                                 <Link   :href="route('dashboard')">
-                                    <ApplicationMark class="block h-9 w-auto" />
+                                    <ApplicationMark class="block h-16 w-auto" />
                                 </Link>
                             </div>
 
